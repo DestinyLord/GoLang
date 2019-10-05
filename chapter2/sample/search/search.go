@@ -13,14 +13,14 @@ import (
 var matchers = make(map[string]Matcher)
 
 // Run执行搜索逻辑
-func Run(searchTerm string)  {
+func Run(searchTerm string) {
 	/* 获取需要搜索的数据源列表
 	   Go语言允许一个函数返回多个值，
 	   例如 RetrieveFeeds 函数，返回一个值和一个错误值
 	   如果发生了错误，永远不要使用该函数返回的另外一个值（也有允许同时返回数据和错误的函数，
 	   但自己实现的函数，需要遵守这个原则，保持含义足够明确），
 	   这时必须忽略另外一个值，否则程序会产生更多的错误，甚至崩溃
-	 */
+	*/
 	feeds, err := RetrieveFeeds()
 	if err != nil {
 		log.Fatal(err)
@@ -38,12 +38,12 @@ func Run(searchTerm string)  {
 
 	/* 为每个数据源启动一个 goroutine 来查找结果
 	   使用关键字 for range 对 feeds 切片做迭代。
-	 */
+	*/
 	for _, feed := range feeds {
 		/* 获取一个匹配器用于查找
 		   查找`map`里的键时，有两个情况：1.赋值给一个变量；2.为了精确查找，赋值给两个变量。
 		   两种情况下，第一个值是一样的，都是`map`查找的结果值。如果指定了第二个值，会返回一个布尔标志，来表示查找的键是否存在于`map`里。
-		 */
+		*/
 		matcher, exists := matchers[feed.Type]
 		if !exists {
 			matcher = matchers["default"]
@@ -68,4 +68,14 @@ func Run(searchTerm string)  {
 
 	// 启动函数，显示返回结果，并且在最后一个结果显示完后返回
 	Display(results)
+}
+
+// Register 调用时，会注册一个匹配器，提供给后面的程序使用
+func Register(feedType string, matcher Matcher) {
+	if _, exists := matchers[feedType]; exists {
+		log.Fatalln(feedType, "Matcher already registered")
+	}
+
+	log.Println("Register", feedType, "matcher")
+	matchers[feedType] = matcher
 }
