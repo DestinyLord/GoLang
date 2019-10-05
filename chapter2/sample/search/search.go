@@ -36,9 +36,14 @@ func Run(searchTerm string)  {
 	// 每个数据源的 goroutine 的数量
 	waitGroup.Add(len(feeds))
 
-	// 为每个数据源启动一个 goroutine 来查找结果
+	/* 为每个数据源启动一个 goroutine 来查找结果
+	   使用关键字 for range 对 feeds 切片做迭代。
+	 */
 	for _, feed := range feeds {
-		// 获取一个匹配器用于查找
+		/* 获取一个匹配器用于查找
+		   查找`map`里的键时，有两个情况：1.赋值给一个变量；2.为了精确查找，赋值给两个变量。
+		   两种情况下，第一个值是一样的，都是`map`查找的结果值。如果指定了第二个值，会返回一个布尔标志，来表示查找的键是否存在于`map`里。
+		 */
 		matcher, exists := matchers[feed.Type]
 		if !exists {
 			matcher = matchers["default"]
@@ -47,13 +52,14 @@ func Run(searchTerm string)  {
 		// 启动一个 goroutine 来执行搜索
 		go func(matcher Matcher, feed *Feed) {
 			Match(matcher, feed, searchTerm, results)
+			// 此处 waitGroup 的值没有作为参数传入匿名函数，却依旧能访问，是应用了闭包。
 			waitGroup.Done()
 		}(matcher, feed)
 	}
 
 	// 启动一个 goroutine 来监控是否所有的工作都做完了
 	go func() {
-		// 等待所有任务完成
+		// 等待所有任务完成，这个方法会导致 goroutine 阻塞，直到 WaitGroup 内部的计数到达 0
 		waitGroup.Wait()
 
 		// 用关闭通道的方式，通知 Display 函数可以退出函数了
